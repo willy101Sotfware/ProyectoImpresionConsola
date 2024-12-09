@@ -127,9 +127,9 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             y += 20;
 
             // Detalles de la transacción
-            DrawReceiptLine(graphics, fontBold, "Documento:", _transaction.Document, xLeft, xRight, ref y);
-            DrawReceiptLine(graphics, fontBold, "Referencia:", _transaction.Reference, xLeft, xRight, ref y);
-            DrawReceiptLine(graphics, fontBold, "Producto:", _transaction.Product, xLeft, xRight, ref y);
+            DrawReceiptLine(graphics, fontBold, "Documento:", _transaction.Document ?? "N/A", xLeft, xRight, ref y);
+            DrawReceiptLine(graphics, fontBold, "Referencia:", _transaction.Reference ?? "N/A", xLeft, xRight, ref y);
+            DrawReceiptLine(graphics, fontBold, "Producto:", _transaction.Product ?? "N/A", xLeft, xRight, ref y);
 
             // Línea separadora
             graphics.DrawString("==========================================", fontRegular, brush, xLeft, y);
@@ -146,8 +146,8 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             y += 20;
 
             // Estado y descripción
-            DrawReceiptLine(graphics, fontBold, "Estado:", _transaction.StateTransaction, xLeft, xRight, ref y);
-            DrawReceiptLine(graphics, fontBold, "Descripción:", _transaction.Description, xLeft, xRight, ref y);
+            DrawReceiptLine(graphics, fontBold, "Estado:", _transaction.StateTransaction ?? "N/A", xLeft, xRight, ref y);
+            DrawReceiptLine(graphics, fontBold, "Descripción:", _transaction.Description ?? "N/A", xLeft, xRight, ref y);
 
             // Línea separadora
             graphics.DrawString("==========================================", fontRegular, brush, xLeft, y);
