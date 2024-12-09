@@ -8,7 +8,6 @@ using PrinterSQLiteApp.Domain.Interfaces;
 using PrinterSQLiteApp.Infrastructure.Repositories;
 using PrinterSQLiteApp.Infrastructure.Services;
 
-
 class Program
 {
     static void Main(string[] args)
@@ -52,10 +51,43 @@ class Program
                     {
                         // Sort transactions by DateCreated to ensure order
                         var sortedTransactions = transactions.OrderBy(t => t.DateCreated).ToList();
+
+                        // Mostrar detalles de las transacciones
+                        Console.WriteLine("Detalles de las Transacciones:");
+                        Console.WriteLine("-----------------------------");
                         foreach (var transaction in sortedTransactions)
                         {
-                            printerService.ImprimirRecibo(transaction);
-                            Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
+                            Console.WriteLine($"ID Transacción: {transaction.TransactionId}");
+                            Console.WriteLine($"ID API: {transaction.IdApi}");
+                            Console.WriteLine($"Documento: {transaction.Document}");
+                            Console.WriteLine($"Referencia: {transaction.Reference}");
+                            Console.WriteLine($"Producto: {transaction.Product}");
+                            Console.WriteLine($"Monto Total: {transaction.TotalAmount:C}");
+                            Console.WriteLine($"Monto Real: {transaction.RealAmount:C}");
+                            Console.WriteLine($"Monto Ingreso: {transaction.IncomeAmount:C}");
+                            Console.WriteLine($"Monto Devolución: {transaction.ReturnAmount:C}");
+                            Console.WriteLine($"Estado: {transaction.StateTransaction}");
+                            Console.WriteLine($"Fecha Creación: {transaction.DateCreated:g}");
+                            Console.WriteLine($"Fecha Actualización: {transaction.DateUpdated:g}");
+                            Console.WriteLine($"Descripción: {transaction.Description}");
+                            Console.WriteLine("-----------------------------");
+                        }
+
+                        // Preguntar si desea imprimir
+                        Console.Write("¿Desea imprimir estas transacciones? (s/n): ");
+                        string respuesta = Console.ReadLine()?.ToLower() ?? string.Empty;
+
+                        if (respuesta == "s")
+                        {
+                            foreach (var transaction in sortedTransactions)
+                            {
+                                printerService.ImprimirRecibo(transaction);
+                                Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Impresión cancelada.");
                         }
                     }
                     else
