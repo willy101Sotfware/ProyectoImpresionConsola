@@ -1,70 +1,88 @@
+using System;
+using System.IO;
 using System.Text.Json;
 using PrinterSQLiteApp.Domain.Configuration;
+using PrinterSQLiteApp.Domain.Entities;
 using PrinterSQLiteApp.Domain.Interfaces;
 using PrinterSQLiteApp.Infrastructure.Repositories;
 using PrinterSQLiteApp.Infrastructure.Services;
-using System.IO;
 
-string jsonConfig;
+// Use the fully qualified name to avoid ambiguity
+using PrinterConfig = PrinterSQLiteApp.Infrastructure.Services.PrinterConfig;
 
-try
+class Program
 {
-    string configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
-    jsonConfig = File.ReadAllText(configPath);
-}
-catch (FileNotFoundException)
-{
-    Console.WriteLine("Error: No se pudo encontrar el archivo 'config.json'. Asegúrate de que esté en la carpeta correcta.");
-    return;
-}
-
-var config = JsonSerializer.Deserialize<Config>(jsonConfig);
-
-if (config == null || string.IsNullOrEmpty(config.RutaDb))
-{
-    Console.WriteLine("Error: La configuración no es válida o falta la propiedad 'RutaDb' en el archivo config.json.");
-    return;
-}
-
-string connectionString = $"Data Source={config.RutaDb}";
-ITransactionRepository transactionRepository = new TransactionRepository(connectionString);
-var printerService = new ThermalPrinterService();
-
-while (true)
-{
-    Console.Write("Ingrese el IdApi (número de 5 dígitos): ");
-    string input = Console.ReadLine() ?? string.Empty;
-
-    if (!string.IsNullOrEmpty(input) && input.Length == 5 && int.TryParse(input, out int idApi))
+    static void Main(string[] args)
     {
-        var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
+        string jsonConfig;
 
-        if (transactions.Count > 0)
+        try
         {
-            foreach (var transaction in transactions)
-            {
-                // Mostrar la transacción en consola
-                string json = JsonSerializer.Serialize(transaction, new JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine(json);
+            string configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
+            jsonConfig = File.ReadAllText(configPath);
+        }
+        catch (FileNotFoundException)
+        {
+            Console.WriteLine("Error: No se pudo encontrar el archivo 'config.json'. Asegúrate de que esté en la carpeta correcta.");
+            return;
+        }
 
-                // Imprimir el recibo
-                Console.WriteLine("\n¿Desea imprimir el recibo? (S/N)");
-                if (Console.ReadLine()?.ToUpper() == "S")
+        var config = JsonSerializer.Deserialize<Config>(jsonConfig);
+
+        if (config == null || string.IsNullOrEmpty(config.RutaDb))
+        {
+            Console.WriteLine("Error: La configuración no es válida o falta la propiedad 'RutaDb' en el archivo config.json.");
+            return;
+        }
+
+        string connectionString = $"Data Source={config.RutaDb}";
+        ITransactionRepository transactionRepository = new TransactionRepository(connectionString);
+        var printerService = new ThermalPrinterService();
+
+        while (true)
+        {
+            try
+            {
+                Console.Write("Ingrese el IdApi (número de 5 dígitos): ");
+                string input = Console.ReadLine() ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(input) && input.Length == 5 && int.TryParse(input, out int idApi))
                 {
-                    printerService.PrintTransaction(transaction);
+                    var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
+
+                    if (transactions.Count > 0)
+                    {
+                        foreach (var transaction in transactions)
+                        {
+                            // Mostrar la transacción en consola
+                            string json = JsonSerializer.Serialize(transaction, new JsonSerializerOptions { WriteIndented = true });
+                            Console.WriteLine(json);
+
+                            // Imprimir el recibo
+                            Console.WriteLine("\n¿Desea imprimir el recibo? (S/N)");
+                            if (Console.ReadLine()?.ToUpper() == "S")
+                            {
+                                printerService.PrintTransaction(transaction);
+                            }
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        Console.Clear();
+                        Console.WriteLine($"No se encontraron transacciones para IdApi: {idApi}. Intente nuevamente.\n");
+                    }
+                }
+                else
+                {
+                    Console.Clear();
+                    Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
                 }
             }
-            break;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en la aplicación: {ex.Message}");
+            }
         }
-        else
-        {
-            Console.Clear();
-            Console.WriteLine($"No se encontraron transacciones para IdApi: {idApi}. Intente nuevamente.\n");
-        }
-    }
-    else
-    {
-        Console.Clear();
-        Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
     }
 }

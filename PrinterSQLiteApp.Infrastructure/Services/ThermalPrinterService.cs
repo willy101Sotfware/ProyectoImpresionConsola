@@ -7,18 +7,18 @@ using PrinterSQLiteApp.Domain.Entities;
 
 namespace PrinterSQLiteApp.Infrastructure.Services
 {
-    public class Config
+    public class PrinterConfig
     {
-        public string RutaDb { get; set; }
-        public string RutaImg { get; set; }
+        public string? RutaDb { get; set; }
+        public string? RutaImg { get; set; }
     }
 
     public class ThermalPrinterService
     {
-        private readonly string _rutaImg;
+        private readonly string? _rutaImg;
         private readonly PrintDocument _printDocument;
-        private Image _logo;
-        private Transaction _transaction;
+        private Image? _logo;
+        private Transaction? _transaction;
 
         public ThermalPrinterService()
         {
@@ -33,7 +33,14 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             // Cargar la imagen del logo
             if (!string.IsNullOrEmpty(_rutaImg) && File.Exists(_rutaImg))
             {
-                _logo = Image.FromFile(_rutaImg);
+                try 
+                {
+                    _logo = Image.FromFile(_rutaImg);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error al cargar la imagen: {ex.Message}");
+                }
             }
             else
             {
@@ -41,12 +48,12 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             }
         }
 
-        private Config LoadConfig(string path)
+        private PrinterConfig? LoadConfig(string path)
         {
             try
             {
                 string json = File.ReadAllText(path);
-                return JsonSerializer.Deserialize<Config>(json);
+                return JsonSerializer.Deserialize<PrinterConfig>(json);
             }
             catch (Exception ex)
             {
@@ -57,13 +64,20 @@ namespace PrinterSQLiteApp.Infrastructure.Services
 
         public void PrintTransaction(Transaction transaction)
         {
-            _transaction = transaction;
+            _transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
             ImprimirRecibo();
         }
 
         // Método que maneja el evento PrintPage para imprimir la imagen y los detalles del recibo
         private void PrintPage(object sender, PrintPageEventArgs e)
         {
+            if (_transaction == null)
+            {
+                Console.WriteLine("No hay transacción para imprimir.");
+                e.HasMorePages = false;
+                return;
+            }
+
             // Configurar el margen
             float margenIzquierdo = e.MarginBounds.Left;
             float margenSuperior = e.MarginBounds.Top;
@@ -78,36 +92,37 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             margenSuperior += 130; // Deja espacio suficiente después de la imagen
 
             // Ejemplo de contenido del recibo
-            Font fontTitle = new Font("Arial", 14, FontStyle.Bold);
-            Font fontText = new Font("Arial", 10);
-            Brush brush = Brushes.Black;
+            using (Font fontTitle = new Font("Arial", 14, FontStyle.Bold))
+            using (Font fontText = new Font("Arial", 10))
+            using (Brush brush = Brushes.Black)
+            {
+                e.Graphics.DrawString("Recibo de Transacción", fontTitle, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 30; // Mueve el cursor para la siguiente línea
 
-            e.Graphics.DrawString("Recibo de Transacción", fontTitle, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 30; // Mueve el cursor para la siguiente línea
+                // Información de la transacción
+                e.Graphics.DrawString($"ID Transacción: {_transaction.TransactionId}", fontText, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 20;
 
-            // Información de la transacción
-            e.Graphics.DrawString($"ID Transacción: {_transaction.TransactionId}", fontText, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 20;
+                e.Graphics.DrawString($"ID API: {_transaction.IdApi}", fontText, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 20;
 
-            e.Graphics.DrawString($"ID API: {_transaction.IdApi}", fontText, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 20;
+                e.Graphics.DrawString($"Documento: {_transaction.Document}", fontText, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 20;
 
-            e.Graphics.DrawString($"Documento: {_transaction.Document}", fontText, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 20;
+                e.Graphics.DrawString($"Referencia: {_transaction.Reference}", fontText, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 20;
 
-            e.Graphics.DrawString($"Referencia: {_transaction.Reference}", fontText, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 20;
+                e.Graphics.DrawString($"Producto: {_transaction.Product}", fontText, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 20;
 
-            e.Graphics.DrawString($"Producto: {_transaction.Product}", fontText, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 20;
+                e.Graphics.DrawString($"Monto Total: ${_transaction.TotalAmount:N2}", fontText, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 20;
 
-            e.Graphics.DrawString($"Monto Total: ${_transaction.TotalAmount:N2}", fontText, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 20;
+                e.Graphics.DrawString($"Estado: {_transaction.StateTransaction}", fontText, brush, margenIzquierdo, margenSuperior);
+                margenSuperior += 20;
 
-            e.Graphics.DrawString($"Estado: {_transaction.StateTransaction}", fontText, brush, margenIzquierdo, margenSuperior);
-            margenSuperior += 20;
-
-            e.Graphics.DrawString($"Fecha: {_transaction.DateCreated:dd/MM/yyyy HH:mm:ss}", fontText, brush, margenIzquierdo, margenSuperior);
+                e.Graphics.DrawString($"Fecha: {_transaction.DateCreated:dd/MM/yyyy HH:mm:ss}", fontText, brush, margenIzquierdo, margenSuperior);
+            }
 
             e.HasMorePages = false;
         }
