@@ -43,15 +43,12 @@ class Program
                 var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
                 if (transactions != null && transactions.Any())
                 {
-                    // Sort transactions by DateCreated to ensure order
                     var sortedTransactions = transactions.OrderBy(t => t.DateCreated).ToList();
 
-                    // Mostrar detalles de las transacciones
                     Console.WriteLine("Detalles de las Transacciones:");
                     Console.WriteLine("-----------------------------");
                     foreach (var transaction in sortedTransactions)
                     {
-                        Console.WriteLine($"ID Transacción: {transaction.TransactionId}");
                         Console.WriteLine($"ID API: {transaction.IdApi}");
                         Console.WriteLine($"Documento: {transaction.Document}");
                         Console.WriteLine($"Referencia: {transaction.Reference}");
@@ -65,42 +62,43 @@ class Program
                         Console.WriteLine($"Fecha Actualización: {transaction.DateUpdated:g}");
                         Console.WriteLine($"Descripción: {transaction.Description}");
                         Console.WriteLine("-----------------------------");
-                    }
 
-                    // Preguntar si desea imprimir
-                    Console.Write("¿Desea imprimir estas transacciones? (s/n): ");
-                    string respuesta = Console.ReadLine()?.ToLower() ?? string.Empty;
-
-                    if (respuesta == "s")
-                    {
-                        foreach (var transaction in sortedTransactions)
+                        // Imprimir automáticamente
+                        try
                         {
                             printerService.ImprimirRecibo(transaction);
                             Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
+                            Thread.Sleep(1000); // Esperar 1 segundo entre impresiones
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error al imprimir: {ex.Message}");
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine("Impresión cancelada.");
-                    }
+
+                    // Esperar 3 segundos y cerrar
+                    Thread.Sleep(3000);
+                    Environment.Exit(0);
                 }
                 else
                 {
                     Console.WriteLine("No se encontraron transacciones para el IdApi proporcionado.");
+                    Thread.Sleep(2000);
+                    Environment.Exit(0);
                 }
             }
             else
             {
                 Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
+                Thread.Sleep(2000);
+                Environment.Exit(0);
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
+            Thread.Sleep(2000);
+            Environment.Exit(0);
         }
-
-        // Fin del programa, cerrar la consola
-        Console.WriteLine("Programa finalizado. Presione cualquier tecla para salir.");
-        Console.ReadKey();  // Espera a que el usuario presione una tecla para salir
     }
 }
