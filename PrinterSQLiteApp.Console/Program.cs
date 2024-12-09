@@ -1,11 +1,13 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Linq;
 using PrinterSQLiteApp.Domain.Configuration;
 using PrinterSQLiteApp.Domain.Entities;
 using PrinterSQLiteApp.Domain.Interfaces;
 using PrinterSQLiteApp.Infrastructure.Repositories;
 using PrinterSQLiteApp.Infrastructure.Services;
+
 
 class Program
 {
@@ -48,10 +50,12 @@ class Program
                     var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
                     if (transactions != null && transactions.Any())
                     {
-                        foreach (var transaction in transactions)
+                        // Sort transactions by DateCreated to ensure order
+                        var sortedTransactions = transactions.OrderBy(t => t.DateCreated).ToList();
+                        foreach (var transaction in sortedTransactions)
                         {
-                            printerService.ImprimirRecibo();
-                            Console.WriteLine($"Transacción {transaction.Id} impresa correctamente.");
+                            printerService.ImprimirRecibo(transaction);
+                            Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
                         }
                     }
                     else
