@@ -88,7 +88,6 @@ namespace PrinterSQLiteApp.Infrastructure.Services
 
         private void PrintPage(object sender, PrintPageEventArgs e)
         {
-            Console.WriteLine("PrintPage llamado");
 
             if (_transaction == null)
             {
@@ -107,7 +106,7 @@ namespace PrinterSQLiteApp.Infrastructure.Services
 
             // Márgenes y posiciones iniciales
             int xLeft = 10;
-            int xCenter = e.PageBounds.Width / 2;
+            int pageWidth = e.PageBounds.Width;
             int y = 20;
             int lineSpacing = 20;
 
@@ -115,26 +114,24 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             if (_logo != null)
             {
                 int logoWidth = 100;
-                int logoX = xCenter - (logoWidth / 2);
+                int logoX = pageWidth / 2 - (logoWidth / 2);
                 graphics.DrawImage(_logo, logoX, y, logoWidth, 50);
                 y += 60;
             }
 
             // Título
-            graphics.DrawString("Recibo de Transacción", fontTitle, brush, xCenter - 70, y);
+            graphics.DrawString("Recibo de Transacción", fontTitle, brush, pageWidth / 2 - 70, y);
             y += 30;
 
-            // Línea separadora
-            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
-            y += lineSpacing;
+            // Separador
+            DrawSeparator(graphics, fontRegular, xLeft, pageWidth, ref y, lineSpacing);
 
             // Sección de encabezado
             DrawReceiptLine(graphics, fontBold, "Recaudo", _transaction.Product ?? "N/A", xLeft, ref y, lineSpacing);
             DrawReceiptLine(graphics, fontBold, "Fecha", _transaction.DateCreated.ToString("yyyy-MM-dd"), xLeft, ref y, lineSpacing);
             DrawReceiptLine(graphics, fontBold, "Hora", _transaction.DateCreated.ToString("HH:mm:ss"), xLeft, ref y, lineSpacing);
 
-            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
-            y += lineSpacing;
+            DrawSeparator(graphics, fontRegular, xLeft, pageWidth, ref y, lineSpacing);
 
             // Sección de datos personales y transacción
             DrawReceiptLine(graphics, fontBold, "Nro. Documento", _transaction.Document ?? "N/A", xLeft, ref y, lineSpacing);
@@ -142,8 +139,7 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             DrawReceiptLine(graphics, fontBold, "Estado", _transaction.StateTransaction ?? "N/A", xLeft, ref y, lineSpacing);
             DrawReceiptLine(graphics, fontBold, "Referencia", _transaction.Reference ?? "N/A", xLeft, ref y, lineSpacing);
 
-            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
-            y += lineSpacing;
+            DrawSeparator(graphics, fontRegular, xLeft, pageWidth, ref y, lineSpacing);
 
             // Sección de montos
             DrawReceiptLine(graphics, fontBold, "Pago sin redondear", $"{_transaction.RealAmount:C}", xLeft, ref y, lineSpacing);
@@ -151,19 +147,17 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             DrawReceiptLine(graphics, fontBold, "Valor Ingresado", $"{_transaction.IncomeAmount:C}", xLeft, ref y, lineSpacing);
             DrawReceiptLine(graphics, fontBold, "Valor Devuelto", $"{_transaction.ReturnAmount:C}", xLeft, ref y, lineSpacing);
 
-            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
-            y += lineSpacing;
+            DrawSeparator(graphics, fontRegular, xLeft, pageWidth, ref y, lineSpacing);
 
             // Dirección y contacto
             DrawReceiptLine(graphics, fontBold, "Dirección", "Calle 20 Sur n° 23 a - 16", xLeft, ref y, lineSpacing);
             DrawReceiptLine(graphics, fontBold, "Línea de Atención", "(+57) 3204240394", xLeft, ref y, lineSpacing);
 
-            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
-            y += lineSpacing;
+            DrawSeparator(graphics, fontRegular, xLeft, pageWidth, ref y, lineSpacing);
 
             // Descripción (ajustar texto largo)
             string description = _transaction.Description ?? "N/A";
-            DrawMultilineText(graphics, fontRegular, description, xLeft, ref y, e.PageBounds.Width - xLeft * 2);
+            DrawMultilineText(graphics, fontRegular, description, xLeft, ref y, pageWidth - xLeft * 2);
 
             y += 20;
 
@@ -175,7 +169,7 @@ namespace PrinterSQLiteApp.Infrastructure.Services
 
             // Pie de página
             Font fontBrand = new Font("Arial", 14, FontStyle.Bold);
-            graphics.DrawString("E-city Software", fontBrand, brush, xCenter - 70, y);
+            graphics.DrawString("E-city Software", fontBrand, brush, pageWidth / 2 - 70, y);
         }
 
         // Método auxiliar para dibujar líneas de recibo con clave-valor
@@ -214,6 +208,12 @@ namespace PrinterSQLiteApp.Infrastructure.Services
             }
         }
 
+        private void DrawSeparator(Graphics graphics, Font font, int xLeft, int pageWidth, ref int y, int lineSpacing)
+        {
+            string separator = new string('=', (pageWidth - xLeft * 2) / 7); // Ajusta el tamaño del separador
+            graphics.DrawString(separator, font, Brushes.Black, xLeft, y);
+            y += lineSpacing;
+        }
 
     }
 }
