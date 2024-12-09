@@ -5,7 +5,7 @@ using PrinterSQLiteApp.Domain.Configuration;
 using PrinterSQLiteApp.Domain.Entities;
 using PrinterSQLiteApp.Domain.Interfaces;
 using PrinterSQLiteApp.Infrastructure.Repositories;
-using PrinterSQLiteApp.Infrastructure.Services;
+
 
 class Program
 {
@@ -51,7 +51,7 @@ class Program
                         foreach (var transaction in transactions)
                         {
                             printerService.ImprimirRecibo();
-                            Console.WriteLine($"Transacción {transaction.Id} impresa correctamente.");
+                            Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
                         }
                     }
                     else
