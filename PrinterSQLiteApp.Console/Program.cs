@@ -1,8 +1,5 @@
-using System;
-using System.IO;
 using System.Text.Json;
 using PrinterSQLiteApp.Domain.Configuration;
-using PrinterSQLiteApp.Domain.Entities;
 using PrinterSQLiteApp.Domain.Interfaces;
 using PrinterSQLiteApp.Infrastructure.Repositories;
 
@@ -36,38 +33,72 @@ class Program
         ITransactionRepository transactionRepository = new TransactionRepository(connectionString);
         var printerService = new ThermalPrinterService();
 
-        while (true)
+        try
         {
-            try
-            {
-                Console.Write("Ingrese el IdApi (número de 5 dígitos): ");
-                string input = Console.ReadLine() ?? string.Empty;
+            Console.Write("Ingrese el IdApi (número de 5 dígitos): ");
+            string input = Console.ReadLine() ?? string.Empty;
 
-                if (!string.IsNullOrEmpty(input) && input.Length == 5 && int.TryParse(input, out int idApi))
+            if (!string.IsNullOrEmpty(input) && input.Length == 5 && int.TryParse(input, out int idApi))
+            {
+                var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
+                if (transactions != null && transactions.Any())
                 {
-                    var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
-                    if (transactions != null && transactions.Any())
+                    var sortedTransactions = transactions.OrderBy(t => t.DateCreated).ToList();
+
+                    Console.WriteLine("Detalles de las Transacciones:");
+                    Console.WriteLine("-----------------------------");
+                    foreach (var transaction in sortedTransactions)
                     {
-                        foreach (var transaction in transactions)
+                        Console.WriteLine($"ID API: {transaction.IdApi}");
+                        Console.WriteLine($"Documento: {transaction.Document}");
+                        Console.WriteLine($"Referencia: {transaction.Reference}");
+                        Console.WriteLine($"Producto: {transaction.Product}");
+                        Console.WriteLine($"Monto Total: {transaction.TotalAmount:C}");
+                        Console.WriteLine($"Monto Real: {transaction.RealAmount:C}");
+                        Console.WriteLine($"Monto Ingreso: {transaction.IncomeAmount:C}");
+                        Console.WriteLine($"Monto Devolución: {transaction.ReturnAmount:C}");
+                        Console.WriteLine($"Estado: {transaction.StateTransaction}");
+                        Console.WriteLine($"Fecha Creación: {transaction.DateCreated:g}");
+                        Console.WriteLine($"Fecha Actualización: {transaction.DateUpdated:g}");
+                        Console.WriteLine($"Descripción: {transaction.Description}");
+                        Console.WriteLine("-----------------------------");
+
+                        // Imprimir automáticamente
+                        try
                         {
-                            printerService.ImprimirRecibo();
+                            printerService.ImprimirRecibo(transaction);
                             Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
+                            Thread.Sleep(1000);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error al imprimir: {ex.Message}");
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine("No se encontraron transacciones para el IdApi proporcionado.");
-                    }
+
+
+                    Thread.Sleep(3000);
+                    Environment.Exit(0);
                 }
                 else
                 {
-                    Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
+                    Console.WriteLine("No se encontraron transacciones para el IdApi proporcionado.");
+                    Thread.Sleep(2000);
+                    Environment.Exit(0);
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
+                Thread.Sleep(2000);
+                Environment.Exit(0);
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            Thread.Sleep(2000);
+            Environment.Exit(0);
         }
     }
 }
