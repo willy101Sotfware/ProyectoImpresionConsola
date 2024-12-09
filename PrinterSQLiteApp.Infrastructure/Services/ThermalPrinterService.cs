@@ -98,79 +98,122 @@ namespace PrinterSQLiteApp.Infrastructure.Services
 
             Graphics graphics = e.Graphics;
 
-            // Definir fuentes
-            Font fontTitle = new Font("Arial", 14, FontStyle.Bold);
+            // Fuentes
+            Font fontTitle = new Font("Arial", 12, FontStyle.Bold);
             Font fontBold = new Font("Arial", 10, FontStyle.Bold);
             Font fontRegular = new Font("Arial", 10, FontStyle.Regular);
             Font fontSmall = new Font("Arial", 8, FontStyle.Regular);
             SolidBrush brush = new SolidBrush(Color.Black);
 
-            // Definir márgenes y posiciones
-            int xLeft = 10; // Margen izquierdo
-            int y = 20;     // Margen superior inicial
+            // Márgenes y posiciones iniciales
+            int xLeft = 10;
+            int xCenter = e.PageBounds.Width / 2;
+            int y = 20;
+            int lineSpacing = 20;
 
-            // Imagen centrada (si existe)
+            // Logo (centrado)
             if (_logo != null)
             {
-                int logoWidth = 150;
-                int logoX = (e.PageBounds.Width - logoWidth) / 2;
+                int logoWidth = 100;
+                int logoX = xCenter - (logoWidth / 2);
                 graphics.DrawImage(_logo, logoX, y, logoWidth, 50);
-                y += 70; // Espacio después del logo
+                y += 60;
             }
 
             // Título
-            graphics.DrawString("Recibo de Transacción", fontTitle, brush, xLeft, y);
+            graphics.DrawString("Recibo de Transacción", fontTitle, brush, xCenter - 70, y);
             y += 30;
 
             // Línea separadora
             graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
-            y += 20;
+            y += lineSpacing;
 
-            // Encabezado de la transacción
-            graphics.DrawString($"ID Transacción: {_transaction.TransactionId}", fontBold, brush, xLeft, y);
-            y += 20;
-            graphics.DrawString($"Fecha Creación: {_transaction.DateCreated:dd/MM/yyyy HH:mm tt}", fontRegular, brush, xLeft, y);
-            y += 20;
+            // Sección de encabezado
+            DrawReceiptLine(graphics, fontBold, "Recaudo", _transaction.Product ?? "N/A", xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Fecha", _transaction.DateCreated.ToString("yyyy-MM-dd"), xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Hora", _transaction.DateCreated.ToString("HH:mm:ss"), xLeft, ref y, lineSpacing);
 
-            // Detalles de la transacción
-            DrawReceiptLine(graphics, fontBold, "Documento:", _transaction.Document ?? "N/A", xLeft, ref y);
-            DrawReceiptLine(graphics, fontBold, "Referencia:", _transaction.Reference ?? "N/A", xLeft, ref y);
-            DrawReceiptLine(graphics, fontBold, "Producto:", _transaction.Product ?? "N/A", xLeft, ref y);
-
-            // Montos
-            DrawReceiptLine(graphics, fontBold, "Monto Total:", $"{_transaction.TotalAmount:C}", xLeft, ref y);
-            DrawReceiptLine(graphics, fontBold, "Monto Real:", $"{_transaction.RealAmount:C}", xLeft, ref y);
-            DrawReceiptLine(graphics, fontBold, "Monto Ingreso:", $"{_transaction.IncomeAmount:C}", xLeft, ref y);
-            DrawReceiptLine(graphics, fontBold, "Monto Devolución:", $"{_transaction.ReturnAmount:C}", xLeft, ref y);
-
-            // Estado y descripción
-            DrawReceiptLine(graphics, fontBold, "Estado:", _transaction.StateTransaction ?? "N/A", xLeft, ref y);
-            DrawReceiptLine(graphics, fontBold, "Descripción:", _transaction.Description ?? "N/A", xLeft, ref y);
-
-            // Línea separadora final
             graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
+            y += lineSpacing;
+
+            // Sección de datos personales y transacción
+            DrawReceiptLine(graphics, fontBold, "Nro. Documento", _transaction.Document ?? "N/A", xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Nro. Transacción", _transaction.TransactionId.ToString(), xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Estado", _transaction.StateTransaction ?? "N/A", xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Referencia", _transaction.Reference ?? "N/A", xLeft, ref y, lineSpacing);
+
+            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
+            y += lineSpacing;
+
+            // Sección de montos
+            DrawReceiptLine(graphics, fontBold, "Pago sin redondear", $"{_transaction.RealAmount:C}", xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Pago redondeado", $"{_transaction.TotalAmount:C}", xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Valor Ingresado", $"{_transaction.IncomeAmount:C}", xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Valor Devuelto", $"{_transaction.ReturnAmount:C}", xLeft, ref y, lineSpacing);
+
+            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
+            y += lineSpacing;
+
+            // Dirección y contacto
+            DrawReceiptLine(graphics, fontBold, "Dirección", "Calle 20 Sur n° 23 a - 16", xLeft, ref y, lineSpacing);
+            DrawReceiptLine(graphics, fontBold, "Línea de Atención", "(+57) 3204240394", xLeft, ref y, lineSpacing);
+
+            graphics.DrawString("------------------------------------------", fontRegular, brush, xLeft, y);
+            y += lineSpacing;
+
+            // Descripción (ajustar texto largo)
+            string description = _transaction.Description ?? "N/A";
+            DrawMultilineText(graphics, fontRegular, description, xLeft, ref y, e.PageBounds.Width - xLeft * 2);
+
             y += 20;
 
-            // Información adicional
-            graphics.DrawString("Dirección: Calle Principal 123", fontSmall, brush, xLeft, y);
+            // Nota
+            graphics.DrawString("Recuerde siempre esperar la tirilla de soporte de su pago.", fontSmall, brush, xLeft, y);
             y += 20;
-            graphics.DrawString("Línea de Atención: 123-456-7890", fontSmall, brush, xLeft, y);
-            y += 20;
+            graphics.DrawString("Es el único documento que lo respalda.", fontSmall, brush, xLeft, y);
+            y += lineSpacing;
 
             // Pie de página
-            graphics.DrawString("Gracias por su transacción", fontSmall, brush, xLeft, y);
-            y += 20;
-
-            // Marca
-            Font fontBrand = new Font("Arial", 16, FontStyle.Bold);
-            graphics.DrawString("E-city Software", fontBrand, brush, xLeft, y);
+            Font fontBrand = new Font("Arial", 14, FontStyle.Bold);
+            graphics.DrawString("E-city Software", fontBrand, brush, xCenter - 70, y);
         }
 
         // Método auxiliar para dibujar líneas de recibo con clave-valor
-        private void DrawReceiptLine(Graphics graphics, Font font, string key, string value, int xLeft, ref int y)
+        private void DrawReceiptLine(Graphics graphics, Font font, string key, string value, int xLeft, ref int y, int lineSpacing)
         {
-            graphics.DrawString($"{key} {value}", font, Brushes.Black, xLeft, y);
-            y += 20; // Incrementar posición vertical
+            graphics.DrawString($"{key}:", font, Brushes.Black, xLeft, y);
+            graphics.DrawString(value, font, Brushes.Black, xLeft + 150, y); // Ajustar posición del valor
+            y += lineSpacing;
         }
+
+
+        private void DrawMultilineText(Graphics graphics, Font font, string text, int xLeft, ref int y, int maxWidth)
+        {
+            // Divide el texto en líneas que se ajustan al ancho máximo
+            string[] words = text.Split(' ');
+            string currentLine = "";
+            foreach (var word in words)
+            {
+                string testLine = currentLine + word + " ";
+                SizeF size = graphics.MeasureString(testLine, font);
+                if (size.Width > maxWidth)
+                {
+                    graphics.DrawString(currentLine, font, Brushes.Black, xLeft, y);
+                    y += 15; // Espaciado entre líneas
+                    currentLine = word + " ";
+                }
+                else
+                {
+                    currentLine = testLine;
+                }
+            }
+            if (!string.IsNullOrEmpty(currentLine))
+            {
+                graphics.DrawString(currentLine, font, Brushes.Black, xLeft, y);
+                y += 15;
+            }
+        }
+
+
     }
 }
