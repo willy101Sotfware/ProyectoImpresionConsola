@@ -7,9 +7,6 @@ using PrinterSQLiteApp.Domain.Interfaces;
 using PrinterSQLiteApp.Infrastructure.Repositories;
 using PrinterSQLiteApp.Infrastructure.Services;
 
-// Use the fully qualified name to avoid ambiguity
-using PrinterConfig = PrinterSQLiteApp.Infrastructure.Services.PrinterConfig;
-
 class Program
 {
     static void Main(string[] args)
@@ -49,39 +46,27 @@ class Program
                 if (!string.IsNullOrEmpty(input) && input.Length == 5 && int.TryParse(input, out int idApi))
                 {
                     var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
-
-                    if (transactions.Count > 0)
+                    if (transactions != null && transactions.Any())
                     {
                         foreach (var transaction in transactions)
                         {
-                            // Mostrar la transacción en consola
-                            string json = JsonSerializer.Serialize(transaction, new JsonSerializerOptions { WriteIndented = true });
-                            Console.WriteLine(json);
-
-                            // Imprimir el recibo
-                            Console.WriteLine("\n¿Desea imprimir el recibo? (S/N)");
-                            if (Console.ReadLine()?.ToUpper() == "S")
-                            {
-                                printerService.PrintTransaction(transaction);
-                            }
+                            printerService.ImprimirRecibo();
+                            Console.WriteLine($"Transacción {transaction.Id} impresa correctamente.");
                         }
-                        break;
                     }
                     else
                     {
-                        Console.Clear();
-                        Console.WriteLine($"No se encontraron transacciones para IdApi: {idApi}. Intente nuevamente.\n");
+                        Console.WriteLine("No se encontraron transacciones para el IdApi proporcionado.");
                     }
                 }
                 else
                 {
-                    Console.Clear();
                     Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en la aplicación: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
             }
         }
     }
