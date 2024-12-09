@@ -68,7 +68,7 @@ class Program
                         {
                             printerService.ImprimirRecibo(transaction);
                             Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
-                            Thread.Sleep(1000); // Esperar 1 segundo entre impresiones
+                            Thread.Sleep(1000); 
                         }
                         catch (Exception ex)
                         {
@@ -76,21 +76,21 @@ class Program
                         }
                     }
 
-                    // Esperar 3 segundos y cerrar
+                 
                     Thread.Sleep(3000);
-                    Environment.Exit(0);
+                    Environment.Exit(0); 
                 }
                 else
                 {
                     Console.WriteLine("No se encontraron transacciones para el IdApi proporcionado.");
-                    Thread.Sleep(2000);
+                    Thread.Sleep(2000); 
                     Environment.Exit(0);
                 }
             }
             else
             {
                 Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
-                Thread.Sleep(2000);
+                Thread.Sleep(2000); 
                 Environment.Exit(0);
             }
         }
