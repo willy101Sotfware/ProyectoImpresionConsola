@@ -1,9 +1,5 @@
-using System;
-using System.IO;
 using System.Text.Json;
-using System.Linq;
 using PrinterSQLiteApp.Domain.Configuration;
-using PrinterSQLiteApp.Domain.Entities;
 using PrinterSQLiteApp.Domain.Interfaces;
 using PrinterSQLiteApp.Infrastructure.Repositories;
 using PrinterSQLiteApp.Infrastructure.Services;
@@ -37,73 +33,74 @@ class Program
         ITransactionRepository transactionRepository = new TransactionRepository(connectionString);
         var printerService = new ThermalPrinterService();
 
-        while (true)
+        try
         {
-            try
+            Console.Write("Ingrese el IdApi (número de 5 dígitos): ");
+            string input = Console.ReadLine() ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(input) && input.Length == 5 && int.TryParse(input, out int idApi))
             {
-                Console.Write("Ingrese el IdApi (número de 5 dígitos): ");
-                string input = Console.ReadLine() ?? string.Empty;
-
-                if (!string.IsNullOrEmpty(input) && input.Length == 5 && int.TryParse(input, out int idApi))
+                var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
+                if (transactions != null && transactions.Any())
                 {
-                    var transactions = transactionRepository.GetTransactionsByIdApi(idApi);
-                    if (transactions != null && transactions.Any())
-                    {
-                        // Sort transactions by DateCreated to ensure order
-                        var sortedTransactions = transactions.OrderBy(t => t.DateCreated).ToList();
+                    // Sort transactions by DateCreated to ensure order
+                    var sortedTransactions = transactions.OrderBy(t => t.DateCreated).ToList();
 
-                        // Mostrar detalles de las transacciones
-                        Console.WriteLine("Detalles de las Transacciones:");
+                    // Mostrar detalles de las transacciones
+                    Console.WriteLine("Detalles de las Transacciones:");
+                    Console.WriteLine("-----------------------------");
+                    foreach (var transaction in sortedTransactions)
+                    {
+                        Console.WriteLine($"ID Transacción: {transaction.TransactionId}");
+                        Console.WriteLine($"ID API: {transaction.IdApi}");
+                        Console.WriteLine($"Documento: {transaction.Document}");
+                        Console.WriteLine($"Referencia: {transaction.Reference}");
+                        Console.WriteLine($"Producto: {transaction.Product}");
+                        Console.WriteLine($"Monto Total: {transaction.TotalAmount:C}");
+                        Console.WriteLine($"Monto Real: {transaction.RealAmount:C}");
+                        Console.WriteLine($"Monto Ingreso: {transaction.IncomeAmount:C}");
+                        Console.WriteLine($"Monto Devolución: {transaction.ReturnAmount:C}");
+                        Console.WriteLine($"Estado: {transaction.StateTransaction}");
+                        Console.WriteLine($"Fecha Creación: {transaction.DateCreated:g}");
+                        Console.WriteLine($"Fecha Actualización: {transaction.DateUpdated:g}");
+                        Console.WriteLine($"Descripción: {transaction.Description}");
                         Console.WriteLine("-----------------------------");
+                    }
+
+                    // Preguntar si desea imprimir
+                    Console.Write("¿Desea imprimir estas transacciones? (s/n): ");
+                    string respuesta = Console.ReadLine()?.ToLower() ?? string.Empty;
+
+                    if (respuesta == "s")
+                    {
                         foreach (var transaction in sortedTransactions)
                         {
-                            Console.WriteLine($"ID Transacción: {transaction.TransactionId}");
-                            Console.WriteLine($"ID API: {transaction.IdApi}");
-                            Console.WriteLine($"Documento: {transaction.Document}");
-                            Console.WriteLine($"Referencia: {transaction.Reference}");
-                            Console.WriteLine($"Producto: {transaction.Product}");
-                            Console.WriteLine($"Monto Total: {transaction.TotalAmount:C}");
-                            Console.WriteLine($"Monto Real: {transaction.RealAmount:C}");
-                            Console.WriteLine($"Monto Ingreso: {transaction.IncomeAmount:C}");
-                            Console.WriteLine($"Monto Devolución: {transaction.ReturnAmount:C}");
-                            Console.WriteLine($"Estado: {transaction.StateTransaction}");
-                            Console.WriteLine($"Fecha Creación: {transaction.DateCreated:g}");
-                            Console.WriteLine($"Fecha Actualización: {transaction.DateUpdated:g}");
-                            Console.WriteLine($"Descripción: {transaction.Description}");
-                            Console.WriteLine("-----------------------------");
-                        }
-
-                        // Preguntar si desea imprimir
-                        Console.Write("¿Desea imprimir estas transacciones? (s/n): ");
-                        string respuesta = Console.ReadLine()?.ToLower() ?? string.Empty;
-
-                        if (respuesta == "s")
-                        {
-                            foreach (var transaction in sortedTransactions)
-                            {
-                                printerService.ImprimirRecibo(transaction);
-                                Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Impresión cancelada.");
+                            printerService.ImprimirRecibo(transaction);
+                            Console.WriteLine($"Transacción {transaction.IdApi} impresa correctamente.");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("No se encontraron transacciones para el IdApi proporcionado.");
+                        Console.WriteLine("Impresión cancelada.");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
+                    Console.WriteLine("No se encontraron transacciones para el IdApi proporcionado.");
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine("Por favor, ingrese un número válido de 5 dígitos.");
             }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+
+        // Fin del programa, cerrar la consola
+        Console.WriteLine("Programa finalizado. Presione cualquier tecla para salir.");
+        Console.ReadKey();  // Espera a que el usuario presione una tecla para salir
     }
 }
