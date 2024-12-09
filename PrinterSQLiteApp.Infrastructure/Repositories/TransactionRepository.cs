@@ -16,14 +16,14 @@ namespace PrinterSQLiteApp.Infrastructure.Repositories
         public List<Transaction> GetTransactionsByIdApi(int idApi)
         {
             var transactions = new List<Transaction>();
-            
+
             using (var connection = new SQLiteConnection(_connectionString))
             {
                 connection.Open();
                 var command = new SQLiteCommand(
-                    "SELECT * FROM \"Transaction\" WHERE IdApi = @idApi", 
+                    "SELECT * FROM \"Transaction\" WHERE IdApi = @idApi",
                     connection);
-                
+
                 command.Parameters.AddWithValue("@idApi", idApi);
 
                 using (var reader = command.ExecuteReader())
